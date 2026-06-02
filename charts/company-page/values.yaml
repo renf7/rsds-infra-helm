@@ -2,8 +2,8 @@
 replicaCount: 1
 
 image:
-  # Replace YOUR_DOCKERHUB_USERNAME with your Docker Hub username.
-  repository: YOUR_DOCKERHUB_USERNAME/rsds-infra-company-page
+  # Docker Hub image (override with --set image.repository=... if needed).
+  repository: renf7/rsds-infra-company-page
   tag: latest
   pullPolicy: Always
 
