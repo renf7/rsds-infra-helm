@@ -1,0 +1,31 @@
+RSDS company-page has been deployed.
+
+Release name: {{ .Release.Name }}
+Namespace:    {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+The site will be served (via the AWS ALB) on these hosts:
+{{- range .Values.ingress.hosts }}
+  - https://{{ .host }}
+{{- end }}
+{{- end }}
+
+Useful commands:
+
+  kubectl get pods
+  kubectl get svc
+  kubectl get ingress
+  kubectl describe ingress {{ include "company-page.fullname" . }}
+
+Get the ALB DNS name created by the Ingress:
+
+  kubectl get ingress {{ include "company-page.fullname" . }} \
+    -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
+Important:
+  - The AWS Load Balancer Controller MUST be installed in the cluster before
+    this chart can provision an ALB.
+  - DNS for the hosts above must point to the ALB DNS name (Route 53 A/Alias
+    records, or a CNAME at your DNS provider). It can take a few minutes for the
+    ALB to become active after install.

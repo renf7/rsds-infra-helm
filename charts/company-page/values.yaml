@@ -1,0 +1,47 @@
+# Number of pod replicas.
+replicaCount: 1
+
+image:
+  # Replace YOUR_DOCKERHUB_USERNAME with your Docker Hub username.
+  repository: YOUR_DOCKERHUB_USERNAME/rsds-infra-company-page
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  # Provided by the AWS Load Balancer Controller (must already be installed).
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/load-balancer-name: rsdsoftware-alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: instance
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    # Redirect all HTTP traffic to HTTPS (port 443).
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+  # ACM certificate ARN covering rsdsoftware.eu and www.rsdsoftware.eu (in eu-central-1).
+  # Replace ACCOUNT_ID and CERTIFICATE_ID with your real values, or override via --set.
+  certificateArn: "arn:aws:acm:eu-central-1:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+  hosts:
+    - host: rsdsoftware.eu
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: www.rsdsoftware.eu
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Container resource requests/limits. Empty by default.
+resources: {}
+
+# Standard pod scheduling controls.
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

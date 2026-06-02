@@ -1,0 +1,23 @@
+# Helm packaged charts
+*.tgz
+
+# Helm dependency downloads
+charts/**/charts/
+
+# Local kube config / secrets (never commit these)
+kubeconfig
+*.kubeconfig
+.kube/
+*.pem
+*.key
+secrets.yaml
+*-secrets.yaml
+
+# OS / editor / temp files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
