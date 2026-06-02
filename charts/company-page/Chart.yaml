@@ -1,6 +1,6 @@
 apiVersion: v2
 name: company-page
-description: RSDS static company website (nginx) deployed to AWS EKS behind an ALB Ingress.
+description: RSD Software static company website (nginx) deployed to AWS EKS behind an ALB Ingress.
 type: application
 
 # Chart version (the version of this chart).
