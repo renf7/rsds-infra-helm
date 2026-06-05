@@ -2,7 +2,6 @@
 replicaCount: 1
 
 image:
-  # Docker Hub image (override with --set image.repository=... if needed).
   repository: renf7/rsds-infra-company-page
   tag: latest
   pullPolicy: Always
