@@ -1,6 +1,6 @@
 # rsds-infra-helm
 
-Helm chart that deploys the **RSDS** static company website to AWS EKS and exposes it
+Helm chart that deploys the **RSD Software** static company website to AWS EKS and exposes it
 at https://rsdsoftware.eu and https://www.rsdsoftware.eu through an AWS Application
 Load Balancer (ALB) Ingress with HTTPS terminated by an AWS Certificate Manager (ACM)
 certificate.

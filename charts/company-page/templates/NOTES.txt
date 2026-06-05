@@ -1,4 +1,4 @@
-RSDS company-page has been deployed.
+RSD Software company-page has been deployed.
 
 Release name: {{ .Release.Name }}
 Namespace:    {{ .Release.Namespace }}
