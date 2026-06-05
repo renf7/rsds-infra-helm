@@ -19,7 +19,10 @@ ingress:
   annotations:
     alb.ingress.kubernetes.io/load-balancer-name: rsdsoftware-alb
     alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: instance
+    # "ip" routes the ALB directly to pod IPs, which works with a ClusterIP
+    # Service (the EKS VPC CNI default). "instance" mode would require the
+    # Service to be type NodePort.
+    alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     # Redirect all HTTP traffic to HTTPS (port 443).
     alb.ingress.kubernetes.io/ssl-redirect: '443'
