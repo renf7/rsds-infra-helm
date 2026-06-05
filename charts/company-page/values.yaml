@@ -2,8 +2,7 @@
 replicaCount: 1
 
 image:
-  # Replace YOUR_DOCKERHUB_USERNAME with your Docker Hub username.
-  repository: YOUR_DOCKERHUB_USERNAME/rsds-infra-company-page
+  repository: renf7/rsds-infra-company-page
   tag: latest
   pullPolicy: Always
 

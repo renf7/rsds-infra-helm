@@ -44,13 +44,12 @@ rsds-infra-helm
 - An **ACM certificate** in **eu-central-1** covering `rsdsoftware.eu` and
   `www.rsdsoftware.eu`.
 - The Docker image available on Docker Hub
-  (`DOCKERHUB_USERNAME/rsds-infra-company-page`).
+  (`renf7/rsds-infra-company-page`).
 
 ## Install
 
 ```bash
 helm install company-page ./charts/company-page \
-  --set image.repository=DOCKERHUB_USERNAME/rsds-infra-company-page \
   --set image.tag=latest \
   --set ingress.certificateArn=ACM_CERTIFICATE_ARN
 ```
@@ -61,7 +60,6 @@ Deploy a specific commit's image by using its `git-<sha>` tag:
 
 ```bash
 helm upgrade company-page ./charts/company-page \
-  --set image.repository=DOCKERHUB_USERNAME/rsds-infra-company-page \
   --set image.tag=git-COMMIT_SHA \
   --set ingress.certificateArn=ACM_CERTIFICATE_ARN
 ```
