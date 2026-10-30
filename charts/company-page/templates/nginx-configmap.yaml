@@ -35,7 +35,7 @@ data:
           proxy_pass http://{{ include "company-page.fullname" . }}-auth:8080;
           proxy_set_header Host $http_host;
           proxy_set_header X-Forwarded-Host $http_host;
-          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Proto {{ if .Values.auth.local }}$scheme{{ else }}https{{ end }};
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         }
         {{- else }}

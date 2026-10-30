@@ -62,6 +62,7 @@ auth:
   signingSecretName: ''
   trustSecretName: ''
   providerSecretName: ''
+  appleKeySecretName: ''
   serviceAccountName: ''
   region: eu-central-1
   table: rsds-infra
@@ -71,6 +72,7 @@ dynamodb:
   image: amazon/dynamodb-local:3.2.0@sha256:f57a1e8cff92471f76fe826045418e28769ab486cefcbecdbc0cae7bbe8e0a02
 idp:
   enabled: false
+  clientTrustSecretName: ''
   image:
     repository: rsds-local/rsds-infra-local
     tag: latest
