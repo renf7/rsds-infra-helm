@@ -43,3 +43,7 @@ https://github.com/renf7/rsds-infra-helm/blob/main/docs/security/REPOSITORY-STAN
 Recommended future consolidation: a dedicated public renf7/rsds-infra-ci repository containing versioned reusable GitHub workflows, and repository templates containing AGENTS.md plus small caller workflows. Keep scanner implementations centralized, pin callers to reviewed commits, and use Dependabot to propose reference updates. This is a recommendation, not an already-created repository or enforcement mechanism. A central document or Confluence page alone does not install/enforce CI.
 
 Latest version checks and temporary compatibility exceptions are recorded in SCANNER-VERSIONS.md. Current ESLint 9 exception and Helm Sonar findings remain tracked in RSDSINFRA-24.
+
+
+## Current dependency-review capability
+Initial actions/dependency-review-action runs failed in both repositories because GitHub reported dependency review unavailable and requested Dependency Graph enablement. Until an administrator enables/verifies it, .github/workflows/dependency-review.yml runs a free full-manifest/lockfile Trivy vulnerability scan on every PR update instead. This does not require the graph API and is not a claim of native base/head dependency-diff review. Helm currently has no application package manifest; add Maven manifests when backend repositories are created and verify non-empty scan coverage. Keep the repository/image scans and native Dependabot/secret protection setup requirements.
