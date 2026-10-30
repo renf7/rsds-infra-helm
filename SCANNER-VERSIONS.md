@@ -35,3 +35,10 @@ References:
 - https://eslint.org/version-support/
 - https://typescript-eslint.io/users/dependency-versions/
 - https://registry.npmjs.org/eslint-plugin-jsx-a11y/latest
+
+## Dependency consolidation — RSDSINFRA-27
+
+Combined Dependabot PRs #5 (setup-python 7.1.0), #6 (setup-helm action 5.0.1) and #7 (checkout 7.0.1). Action references remain pinned to the original Dependabot-proposed immutable commit SHAs. The setup-helm action upgrade does not itself change the configured Helm CLI version.
+
+Tracking: https://rsdsoftware.atlassian.net/browse/RSDSINFRA-27. Validate both consolidated PR heads with the local runner and explicit --e2e; browser tests stay disabled by default. PR workflows remain non-deploying.
+
