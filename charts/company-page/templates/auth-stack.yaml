@@ -1,0 +1,146 @@
+{{- if and .Values.idp.enabled (not .Values.auth.local) }}{{ fail "Identity provider fixture is local-only" }}{{ end }}
+{{- if and .Values.dynamodb.enabled (not .Values.auth.local) }}{{ fail "DynamoDB Local is local-only" }}{{ end }}
+{{- if .Values.auth.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "company-page.fullname" . }}-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: {{ include "company-page.fullname" . }}-auth }
+  template:
+    metadata:
+      labels: { app: {{ include "company-page.fullname" . }}-auth }
+    spec:
+      automountServiceAccountToken: false
+      {{- if .Values.auth.serviceAccountName }}
+      serviceAccountName: {{ .Values.auth.serviceAccountName }}
+      {{- end }}
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: auth
+          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag }}"
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - { name: RSDS_AUTH_REGION, value: {{ .Values.auth.region | quote }} }
+            - { name: RSDS_AUTH_TABLE, value: {{ .Values.auth.table | quote }} }
+            {{- if .Values.auth.local }}
+            - { name: SPRING_PROFILES_ACTIVE, value: local }
+            - { name: RSDS_AUTH_DYNAMO_ENDPOINT, value: "http://{{ include "company-page.fullname" . }}-dynamodb:8000" }
+            - { name: RSDS_AUTH_IDP_BASE, value: "http://{{ include "company-page.fullname" . }}-idp:9000" }
+            {{- end }}
+          {{- if .Values.auth.providerSecretName }}
+          envFrom: [{ secretRef: { name: {{ .Values.auth.providerSecretName }} } }]
+          {{- end }}
+          readinessProbe: { httpGet: { path: /actuator/health, port: http }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: http }, initialDelaySeconds: 30, periodSeconds: 10 }
+          resources:
+            requests: { memory: 256Mi, cpu: 100m, ephemeral-storage: 128Mi }
+            limits: { memory: 768Mi, cpu: "2", ephemeral-storage: 640Mi }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            - { name: signing, mountPath: /run/signing, readOnly: true }
+            - { name: trust, mountPath: /run/trust, readOnly: true }
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 512Mi } }
+        - name: signing
+          secret:
+            secretName: {{ required "auth.signingSecretName is required" .Values.auth.signingSecretName }}
+            defaultMode: 0440
+        - name: trust
+          secret:
+            secretName: {{ required "auth.trustSecretName is required" .Values.auth.trustSecretName }}
+            defaultMode: 0440
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "company-page.fullname" . }}-auth
+spec:
+  type: ClusterIP
+  selector: { app: {{ include "company-page.fullname" . }}-auth }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+{{- end }}
+{{- if .Values.dynamodb.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "company-page.fullname" . }}-dynamodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: {{ include "company-page.fullname" . }}-dynamodb }
+  template:
+    metadata:
+      labels: { app: {{ include "company-page.fullname" . }}-dynamodb }
+    spec:
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: dynamodb
+          image: "{{ .Values.dynamodb.image }}"
+          args: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          ports: [{ name: http, containerPort: 8000 }]
+          readinessProbe: { tcpSocket: { port: http }, initialDelaySeconds: 3, periodSeconds: 3 }
+          resources:
+            requests: { memory: 128Mi, cpu: 100m, ephemeral-storage: 64Mi }
+            limits: { memory: 512Mi, cpu: "1", ephemeral-storage: 320Mi }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: { sizeLimit: 256Mi } }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "company-page.fullname" . }}-dynamodb
+spec:
+  type: ClusterIP
+  selector: { app: {{ include "company-page.fullname" . }}-dynamodb }
+  ports: [{ name: http, port: 8000, targetPort: http }]
+{{- end }}
+{{- if .Values.idp.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "company-page.fullname" . }}-idp
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: {{ include "company-page.fullname" . }}-idp }
+  template:
+    metadata:
+      labels: { app: {{ include "company-page.fullname" . }}-idp }
+    spec:
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: idp
+          image: "{{ .Values.idp.image.repository }}:{{ .Values.idp.image.tag }}"
+          imagePullPolicy: {{ .Values.idp.image.pullPolicy }}
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          env:
+            - { name: ISSUER_BASE, value: "http://{{ include "company-page.fullname" . }}-idp:9000" }
+            - { name: PYTHONDONTWRITEBYTECODE, value: "1" }
+          ports: [{ name: http, containerPort: 9000 }]
+          readinessProbe: { httpGet: { path: /health, port: http }, initialDelaySeconds: 3, periodSeconds: 3 }
+          resources:
+            requests: { memory: 64Mi, cpu: 100m, ephemeral-storage: 64Mi }
+            limits: { memory: 256Mi, cpu: "1", ephemeral-storage: 128Mi }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: { sizeLimit: 64Mi } }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "company-page.fullname" . }}-idp
+spec:
+  type: ClusterIP
+  selector: { app: {{ include "company-page.fullname" . }}-idp }
+  ports: [{ name: http, port: 9000, targetPort: http }]
+{{- end }}
+
