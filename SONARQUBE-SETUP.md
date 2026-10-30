@@ -26,3 +26,7 @@ For future Spring Boot repositories use SonarScanner for Maven/Gradle with compi
 Projects must be public, matching these public GitHub repositories. sonar.projectVisibility=public requests public visibility on creation. Before scanning, CI checks the existing project and requests a public visibility update if needed. If the analysis token lacks project-admin rights, an administrator must change Administration > Permissions > Public once; ordinary analysis tokens can continue after that. Do not broaden CI token privileges merely to automate administration.
 
 PR runs upload PR analyses and wait for their quality gate. View results using dashboard?id=<repository-name>&pullRequest=<PR-number> or the project's Pull Requests tab. The default overview shows main, which is populated when main is analyzed after the workflow is merged (or via a separate trusted baseline run). Absence of main results does not mean PR scans did not execute. The workflow explicitly runs on opened/synchronize/reopened/edited/ready_for_review events targeting main; synchronize includes each pushed commit or force-push. Fork PRs remain excluded from token-based analysis.
+
+
+## Helm activation verification
+After adding or rotating the Helm repository's SONAR_TOKEN secret, push a PR update and verify the SonarQube Cloud run reaches analysis and reports its quality gate. For this setup PR, inspect the project's Pull Requests entry for PR #4; main-branch results are separate. A missing-token error, skipped job or queued run is not proof of successful analysis.
