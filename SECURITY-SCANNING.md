@@ -21,3 +21,9 @@ Apply this workflow baseline when rsds-infra-auth-service, rsds-infra-job-offer-
 Investigate each failure. Fix the root cause; any suppression must name the finding, justification, owner and expiry. Never commit signing keys, OAuth secrets, database credentials or personal offer/CV data. Scheduled runs catch newly published advisories. Passing scans do not replace JWT/role/ownership security tests.
 
 The first successful CI run must be verified before claiming the setup is operational. Community Semgrep coverage is narrower than its paid engine. Security scans need network access for rules and vulnerability feeds.
+
+
+## Hardened nginx deployment
+The chart starts nginx directly as UID/GID 101 with a read-only root filesystem, all Linux capabilities dropped, privilege escalation disabled, RuntimeDefault seccomp and no service-account token mount. A ConfigMap supplies nginx.conf; only a bounded /tmp emptyDir is writable for PID and temporary files. Its checksum triggers rollout on configuration changes.
+
+The Service remains port 80, while service.targetPort now defaults to 8080. Remove any old targetPort=80 overrides before deployment. This chart-managed nginx configuration deliberately bypasses image entrypoint scripts and replaces the default configuration; custom image entrypoint/config extensions need review before adoption. Existing website files and assets are served unchanged. CI renders the chart and tests the configured image under equivalent user/filesystem/capability restrictions, including English/Polish routes and CSS. Production rollout remains separate.
