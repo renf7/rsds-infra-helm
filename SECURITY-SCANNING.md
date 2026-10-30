@@ -30,4 +30,4 @@ The Service remains port 80, while service.targetPort now defaults to 8080. Remo
 
 
 ## Container storage budget
-The default container requests 64Mi and limits 128Mi of ephemeral-storage. Its /tmp emptyDir is bounded to 64Mi; container logs also consume ephemeral storage. Tune the budget to actual traffic/log retention and the cluster's supported kubelet accounting. Keep a positive resources.limits.ephemeral-storage value when overriding resources; emptyDir.sizeLimit alone does not replace the container limit. This resolves Sonar kubernetes:S6870 without suppressing the rule or changing the quality gate.
+The default container requests 640Mi and limits 1280Mi of ephemeral-storage. Its /tmp emptyDir is bounded to 640Mi; container logs also consume ephemeral storage. Tune the budget to actual traffic/log retention and the cluster's supported kubelet accounting. Keep a positive resources.limits.ephemeral-storage value when overriding resources; emptyDir.sizeLimit alone does not replace the container limit. This resolves Sonar kubernetes:S6870 without suppressing the rule or changing the quality gate.
