@@ -50,3 +50,30 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Authentication is optional until all production registrations/secrets are configured.
+auth:
+  enabled: false
+  local: false
+  image:
+    repository: renf7/rsds-infra-auth-service
+    tag: latest
+    pullPolicy: IfNotPresent
+  signingSecretName: ''
+  trustSecretName: ''
+  providerSecretName: ''
+  appleKeySecretName: ''
+  serviceAccountName: ''
+  region: eu-central-1
+  table: rsds-infra
+# Ephemeral test database and provider boundary; template rejects non-local use.
+dynamodb:
+  enabled: false
+  image: amazon/dynamodb-local:3.2.0@sha256:f57a1e8cff92471f76fe826045418e28769ab486cefcbecdbc0cae7bbe8e0a02
+idp:
+  enabled: false
+  clientTrustSecretName: ''
+  image:
+    repository: rsds-local/rsds-infra-local
+    tag: latest
+    pullPolicy: Never
