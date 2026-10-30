@@ -40,9 +40,9 @@ ingress:
 # Tune these values for the deployment workload; keep a positive storage limit.
 resources:
   requests:
-    ephemeral-storage: 64Mi
+    ephemeral-storage: 640Mi
   limits:
-    ephemeral-storage: 128Mi
+    ephemeral-storage: 1280Mi
 
 # Standard pod scheduling controls.
 nodeSelector: {}
