@@ -9,7 +9,8 @@ image:
 service:
   type: ClusterIP
   port: 80
-  targetPort: 80
+  # nginx runs without root or privileged-port capabilities.
+  targetPort: 8080
 
 ingress:
   enabled: true
