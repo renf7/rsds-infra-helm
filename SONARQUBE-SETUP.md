@@ -4,10 +4,10 @@ This workflow is prepared for the existing renf7 organization at https://sonarcl
 
 ## One-time setup
 1. In SonarCloud organization renf7, import/bind this exact GitHub repository. Verify the organization's permanent free/OSS plan supports analysis of this public project and PRs targeting main. Do not start a paid subscription, trial-dependent integration or paid advanced-security feature. Public projects require review of free/OSS eligibility and any license requirements.
-2. Copy the actual SonarCloud project key; do not assume an older similarly named project belongs to this repository. Existing public keys observed were renf7_rsds-company-page and renf7_rsds-ai-jobs-extractor.
+2. Set the bound SonarCloud project's key to exactly rsds-infra-helm (no renf7_ prefix). For an existing project use its Administration > Update Key option; do not delete/recreate it and lose history. Verify the project is bound to this repository before renaming. If this key is already taken, resolve the collision before scanning.
 3. Choose CI-based analysis and disable Automatic Analysis for this project to avoid duplicate/conflicting analysis.
 4. Create a least-privilege, expiring analysis token in SonarCloud and store it directly in GitHub Settings > Secrets and variables > Actions as secret SONAR_TOKEN. Never put the token in chat, files or repository variables.
-5. Add repository Actions variable SONAR_PROJECT_KEY with the exact imported project's key.
+5. No SONAR_PROJECT_KEY Actions variable is needed: the workflow derives sonar.projectKey from github.event.repository.name. Organization remains renf7. Changing GitHub configuration does not rename the server-side Sonar project; perform step 2 before expecting scans to succeed.
 6. Add repository Actions variable SONAR_ENABLED=true. Merge the configuration and run workflow_dispatch on main for a baseline before expecting useful new-code comparisons. PR scans then run for every commit/update, reopening, metadata edit and ready-for-review event.
 7. Verify main and PR analyses in SonarCloud and GitHub. Only after a real successful run, require the Sonar check/quality gate in branch rules. Confirm that missing/disabled configuration cannot satisfy your required security policy.
 
