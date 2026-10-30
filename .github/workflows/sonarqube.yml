@@ -25,7 +25,6 @@ jobs:
     timeout-minutes: 15
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ENABLED: ${{ vars.SONAR_ENABLED }}
       SONAR_PROJECT_KEY: ${{ github.event.repository.name }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -35,10 +34,6 @@ jobs:
       - name: Validate connection configuration
         shell: bash
         run: |
-          if [ "$SONAR_ENABLED" != "true" ]; then
-            echo "::error::SONAR_ENABLED is missing or is not true in the repository Actions Variables tab. A secret or environment-only variable does not satisfy this setting."
-            exit 1
-          fi
           if [ -z "$SONAR_TOKEN" ]; then
             echo "::error::Missing SONAR_TOKEN repository Actions secret. Store the token in Secrets, not Variables. No token value is logged."
             exit 1
