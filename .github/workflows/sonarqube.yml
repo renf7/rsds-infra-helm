@@ -1,0 +1,45 @@
+name: SonarQube Cloud
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '47 6 * * 2'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sonar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  analyze:
+    name: Sonar analysis and quality gate
+    # Enable only after project binding, free-plan eligibility and secret setup.
+    # Fork PRs do not receive SONAR_TOKEN; never use pull_request_target to expose it.
+    if: >-
+      vars.SONAR_ENABLED == 'true' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate connection configuration
+        shell: bash
+        run: |
+          test -n "$SONAR_TOKEN" || { echo 'Missing SONAR_TOKEN Actions secret'; exit 1; }
+          test -n "$SONAR_PROJECT_KEY" || { echo 'Missing SONAR_PROJECT_KEY Actions variable'; exit 1; }
+      - name: Analyze and wait for the quality gate
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
