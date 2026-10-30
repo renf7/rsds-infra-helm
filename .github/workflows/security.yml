@@ -42,3 +42,53 @@ jobs:
         run: python -m pip install 'semgrep==1.159.0'
       - name: Scan without a Semgrep account
         run: semgrep scan --oss-only --config p/default --metrics off --error .
+  runtime:
+    name: Helm and non-root nginx smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: Azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
+        with:
+          version: v3.17.3
+      - name: Render chart
+        run: |
+          helm lint charts/company-page
+          helm template smoke charts/company-page > /tmp/rendered.yaml
+          python -m pip install 'PyYAML==6.0.3'
+          python - <<'PY'
+          import pathlib, yaml
+          docs = list(yaml.safe_load_all(pathlib.Path('/tmp/rendered.yaml').read_text()))
+          config = next(d for d in docs if d and d['kind'] == 'ConfigMap')
+          deployment = next(d for d in docs if d and d['kind'] == 'Deployment')
+          container = deployment['spec']['template']['spec']['containers'][0]
+          pathlib.Path('/tmp/nginx.conf').write_text(config['data']['nginx.conf'])
+          pathlib.Path('/tmp/smoke-image').write_text(container['image'])
+          assert container['ports'][0]['containerPort'] == 8080
+          assert container['securityContext']['readOnlyRootFilesystem']
+          assert deployment['spec']['template']['spec']['securityContext']['runAsUser'] == 101
+          PY
+      - name: Verify actual image with restricted runtime
+        run: |
+          set -euo pipefail
+          image=$(cat /tmp/smoke-image)
+          docker pull "$image"
+          trap 'docker logs nginx-smoke; docker rm -f nginx-smoke' EXIT
+          docker run -d --name nginx-smoke --user 101:101 --read-only \
+            --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m,mode=1777 \
+            --mount type=bind,source=/tmp/nginx.conf,target=/etc/nginx/nginx.conf,readonly \
+            -p 127.0.0.1:18080:8080 --entrypoint nginx "$image" -g 'daemon off;'
+          curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 1 --max-time 3 http://127.0.0.1:18080/ -o /tmp/home.html
+          grep -qi '<html' /tmp/home.html
+          curl --fail --silent --show-error http://127.0.0.1:18080/pl/ -o /tmp/polish.html
+          grep -qi '<html' /tmp/polish.html
+          curl --fail --silent --show-error http://127.0.0.1:18080/styles.css -o /tmp/styles.css
+          test -s /tmp/styles.css
+          test "$(docker exec nginx-smoke id -u)" = 101
+          docker exec nginx-smoke touch /tmp/write-check
+          if docker exec nginx-smoke touch /usr/share/nginx/html/write-check; then
+            echo 'Root filesystem unexpectedly writable'
+            exit 1
+          fi
