@@ -20,3 +20,9 @@ Helm: scan YAML/Kubernetes where supported; Trivy remains the dedicated Helm/sec
 Fork PRs deliberately skip this token-based job because repository secrets are unavailable. Use SonarCloud's supported GitHub integration or a separately reviewed trusted process for those PRs; do not switch to pull_request_target and execute untrusted PR code with credentials. No paid upgrade is authorized.
 
 For future Spring Boot repositories use SonarScanner for Maven/Gradle with compiled classes and JaCoCo coverage, rather than copying this generic scanner unchanged.
+
+
+## Public visibility and finding PR results
+Projects must be public, matching these public GitHub repositories. sonar.projectVisibility=public requests public visibility on creation. Before scanning, CI checks the existing project and requests a public visibility update if needed. If the analysis token lacks project-admin rights, an administrator must change Administration > Permissions > Public once; ordinary analysis tokens can continue after that. Do not broaden CI token privileges merely to automate administration.
+
+PR runs upload PR analyses and wait for their quality gate. View results using dashboard?id=<repository-name>&pullRequest=<PR-number> or the project's Pull Requests tab. The default overview shows main, which is populated when main is analyzed after the workflow is merged (or via a separate trusted baseline run). Absence of main results does not mean PR scans did not execute. The workflow explicitly runs on opened/synchronize/reopened/edited/ready_for_review events targeting main; synchronize includes each pushed commit or force-push. Fork PRs remain excluded from token-based analysis.
