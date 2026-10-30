@@ -1,6 +1,6 @@
 # SonarQube Cloud setup (free use only)
 
-This workflow is prepared for the existing renf7 organization at https://sonarcloud.io. It is disabled until the repository variable SONAR_ENABLED is exactly true. A skipped job is not analysis evidence and must not be treated as a passing scan.
+This workflow is prepared for the existing renf7 organization at https://sonarcloud.io. The job validates configuration before analysis: repository Actions variable SONAR_ENABLED must be exactly true and SONAR_TOKEN must be an Actions secret. Missing configuration fails with an explicit error instead of silently skipping. Fork PRs remain skipped because they cannot receive the token. A skipped job is not analysis evidence.
 
 ## One-time setup
 1. In SonarCloud organization renf7, import/bind this exact GitHub repository. Verify the organization's permanent free/OSS plan supports analysis of this public project and PRs targeting main. Do not start a paid subscription, trial-dependent integration or paid advanced-security feature. Public projects require review of free/OSS eligibility and any license requirements.
@@ -8,7 +8,7 @@ This workflow is prepared for the existing renf7 organization at https://sonarcl
 3. Choose CI-based analysis and disable Automatic Analysis for this project to avoid duplicate/conflicting analysis.
 4. Create a least-privilege, expiring analysis token in SonarCloud and store it directly in GitHub Settings > Secrets and variables > Actions as secret SONAR_TOKEN. Never put the token in chat, files or repository variables.
 5. No SONAR_PROJECT_KEY Actions variable is needed: the workflow derives sonar.projectKey from github.event.repository.name. Organization remains renf7. Changing GitHub configuration does not rename the server-side Sonar project; perform step 2 before expecting scans to succeed.
-6. Add repository Actions variable SONAR_ENABLED=true. Merge the configuration and run workflow_dispatch on main for a baseline before expecting useful new-code comparisons. PR scans then run for every commit/update, reopening, metadata edit and ready-for-review event.
+6. In Settings > Secrets and variables > Actions > Variables, create a repository variable with Name SONAR_ENABLED and Value true (separate fields; no quotes). Do not create a variable named SONAR_ENABLED=true or store this flag only as a secret/environment variable. Merge the configuration and run workflow_dispatch on main for a baseline before expecting useful new-code comparisons. PR scans then run for every commit/update, reopening, metadata edit and ready-for-review event.
 7. Verify main and PR analyses in SonarCloud and GitHub. Only after a real successful run, require the Sonar check/quality gate in branch rules. Confirm that missing/disabled configuration cannot satisfy your required security policy.
 
 The scanner explicitly waits for the quality gate (five-minute gate timeout) and fails the job on a failed gate. Standard ubuntu-latest runners and the scanner do not require a paid scanner subscription; SonarCloud account/plan eligibility must be checked separately. The Free plan documents PR analysis targeting main; do not promise arbitrary target branches without OSS-plan entitlement.
