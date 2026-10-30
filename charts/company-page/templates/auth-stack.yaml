@@ -79,7 +79,8 @@ spec:
       labels: { app: {{ include "company-page.fullname" . }}-dynamodb }
     spec:
       automountServiceAccountToken: false
-      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      # Official image owns its mode-0700 working directory as UID/GID 1000.
+      securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: dynamodb
           image: "{{ .Values.dynamodb.image }}"
