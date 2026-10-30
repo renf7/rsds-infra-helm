@@ -78,7 +78,7 @@ jobs:
           trap 'docker logs nginx-smoke; docker rm -f nginx-smoke' EXIT
           docker run -d --name nginx-smoke --user 101:101 --read-only \
             --cap-drop ALL --security-opt no-new-privileges \
-            --tmpfs /tmp:rw,noexec,nosuid,size=64m,mode=1777 \
+            --tmpfs /tmp:rw,noexec,nosuid,size=640m,mode=1777 \
             --mount type=bind,source=/tmp/nginx.conf,target=/etc/nginx/nginx.conf,readonly \
             -p 127.0.0.1:18080:8080 --entrypoint nginx "$image" -g 'daemon off;'
           curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 1 --max-time 3 http://127.0.0.1:18080/ -o /tmp/home.html
