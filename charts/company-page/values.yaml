@@ -9,7 +9,8 @@ image:
 service:
   type: ClusterIP
   port: 80
-  targetPort: 80
+  # nginx runs without root or privileged-port capabilities.
+  targetPort: 8080
 
 ingress:
   enabled: true
@@ -35,8 +36,13 @@ ingress:
         - path: /
           pathType: Prefix
 
-# Container resource requests/limits. Empty by default.
-resources: {}
+# Local ephemeral storage covers the bounded /tmp volume and container logs.
+# Tune these values for the deployment workload; keep a positive storage limit.
+resources:
+  requests:
+    ephemeral-storage: 640Mi
+  limits:
+    ephemeral-storage: 1280Mi
 
 # Standard pod scheduling controls.
 nodeSelector: {}

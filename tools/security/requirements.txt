@@ -1,0 +1,2 @@
+# Semgrep Community Edition; kept under Dependabot pip monitoring.
+semgrep==1.183.0
