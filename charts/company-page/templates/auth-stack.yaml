@@ -27,6 +27,9 @@ spec:
           env:
             - { name: RSDS_AUTH_REGION, value: {{ .Values.auth.region | quote }} }
             - { name: RSDS_AUTH_TABLE, value: {{ .Values.auth.table | quote }} }
+            {{- if .Values.mailpit.enabled }}
+            - { name: SPRING_MAIL_HOST, value: "{{ include "company-page.fullname" . }}-mail" }
+            {{- end }}
             {{- if .Values.auth.appleKeySecretName }}
             - { name: RSDS_AUTH_PROVIDERS_APPLE_PRIVATE_KEY_FILE, value: /run/apple/apple.p8 }
             {{- end }}
