@@ -25,6 +25,9 @@ spec:
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports: [{ name: http, containerPort: 8080 }]
           env:
+            {{- if .Values.auth.providerMode }}
+            - { name: RSDS_AUTH_PROVIDER_MODE, value: {{ .Values.auth.providerMode | quote }} }
+            {{- end }}
             - { name: RSDS_AUTH_REGION, value: {{ .Values.auth.region | quote }} }
             - { name: RSDS_AUTH_TABLE, value: {{ .Values.auth.table | quote }} }
             {{- if .Values.mailpit.enabled }}

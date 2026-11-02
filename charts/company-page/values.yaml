@@ -55,6 +55,8 @@ affinity: {}
 auth:
   enabled: false
   local: false
+  # Empty uses fixture with local infrastructure, live otherwise. Manual override: live.
+  providerMode: ''
   image:
     repository: renf7/rsds-infra-auth-service
     tag: latest
