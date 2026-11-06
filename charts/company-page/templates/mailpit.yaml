@@ -1,0 +1,38 @@
+{{- if and .Values.mailpit.enabled (or (not .Values.auth.local) (not .Values.auth.enabled)) }}{{ fail "SMTP test sink is local-auth-only" }}{{ end }}
+{{- if .Values.mailpit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "company-page.fullname" . }}-mail
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: {{ include "company-page.fullname" . }}-mail }
+  template:
+    metadata:
+      labels: { app: {{ include "company-page.fullname" . }}-mail }
+    spec:
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: mail
+          image: {{ .Values.mailpit.image | quote }}
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          args: ["--database", "/tmp/mailpit.db", "--disable-version-check", "--smtp-disable-rdns", "--quiet", "--max", "200"]
+          ports: [{ name: smtp, containerPort: 1025 }, { name: http, containerPort: 8025 }]
+          readinessProbe: { httpGet: { path: /, port: http }, initialDelaySeconds: 3, periodSeconds: 3 }
+          resources:
+            requests: { memory: 32Mi, cpu: 50m, ephemeral-storage: 16Mi }
+            limits: { memory: 256Mi, cpu: "1", ephemeral-storage: 96Mi }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: { medium: Memory, sizeLimit: 64Mi } }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "company-page.fullname" . }}-mail
+spec:
+  type: ClusterIP
+  selector: { app: {{ include "company-page.fullname" . }}-mail }
+  ports: [{ name: smtp, port: 1025, targetPort: smtp }, { name: http, port: 8025, targetPort: http }]
+{{- end }}
