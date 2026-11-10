@@ -42,3 +42,11 @@ before an edit for rollback. Kubernetes RBAC controlling ConfigMap writes contro
 who can operate this switch; the application needs no Kubernetes API permissions.
 
 Reference: https://kubernetes.io/docs/tutorials/configuration/updating-configuration-via-a-configmap/
+
+Provider names are normalized case-insensitively by the auth service (for example,
+`GitHub, GOOGLE`). Unknown names are still rejected. Empty is an intentional operator
+command to hide all, not a transient error. Kubernetes replaces projected files
+atomically; it does not expose a partially written value during normal projection.
+The policy deliberately does not fall back to showing all providers on malformed
+input, since that could expose a provider deliberately hidden by the operator.
+Use the restore command above to recover from a typo.
