@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "company-page.image" .Values.image | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["nginx"]
           args: ["-g", "daemon off;"]

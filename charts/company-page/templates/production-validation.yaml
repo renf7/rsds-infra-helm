@@ -1,0 +1,16 @@
+{{- if .Values.production.enabled -}}
+{{- if or (not .Values.auth.enabled) .Values.auth.local .Values.idp.enabled .Values.dynamodb.enabled .Values.mailpit.enabled -}}
+{{- fail "Production requires live auth and forbids rsds-infra-local, provider fixtures, DynamoDB Local and Mailpit" -}}
+{{- end -}}
+{{- if ne .Values.auth.providerMode "live" -}}{{- fail "Production requires auth.providerMode=live" -}}{{- end -}}
+{{- $host := required "production.host is required" .Values.production.host -}}
+{{- if not (regexMatch "^[a-z0-9][a-z0-9.-]*[a-z0-9]$" $host) -}}{{- fail "production.host must be a DNS hostname" -}}{{- end -}}
+{{- if ne .Values.auth.publicBaseUrl (printf "https://%s" $host) -}}{{- fail "Production auth.publicBaseUrl must match the canonical HTTPS production.host" -}}{{- end -}}
+{{- range $name, $image := dict "frontend" .Values.image "auth" .Values.auth.image -}}
+{{- if not (regexMatch "^git-[a-f0-9]{40}$" (default "" $image.tag)) -}}{{- fail (printf "%s requires a full main commit git-SHA tag from scripts/Prepare-Production.ps1" $name) -}}{{- end -}}
+{{- if not (regexMatch "^sha256:[a-f0-9]{64}$" (default "" $image.digest)) -}}{{- fail (printf "%s requires a resolved immutable registry digest" $name) -}}{{- end -}}
+{{- end -}}
+{{- $_ := required "Production auth.providerSecretName is required" .Values.auth.providerSecretName -}}
+{{- $_ := required "Production auth.serviceAccountName with AWS workload identity is required" .Values.auth.serviceAccountName -}}
+{{- $_ := required "Production auth.table is required" .Values.auth.table -}}
+{{- end -}}

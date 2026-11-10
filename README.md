@@ -1,11 +1,11 @@
 # rsds-infra-helm
 
-Helm chart that deploys the **RSD Software** static company website to AWS EKS and exposes it
+Helm chart that deploys the **RSD Software EU** React frontend and Spring Boot authentication service to AWS EKS. Use the [production runbook](docs/PRODUCTION.md), production profile and main-image preparation command below. It exposes the site
 at https://rsdsoftware.eu and https://www.rsdsoftware.eu through an AWS Application
 Load Balancer (ALB) Ingress with HTTPS terminated by an AWS Certificate Manager (ACM)
 certificate.
 
-The container image is built and published by the companion repository
+Both application images are built and published from main by their companion repositories: [rsds-infra-auth-service](https://github.com/renf7/rsds-infra-auth-service) and
 [`rsds-infra-company-page`](https://github.com/renf7/rsds-infra-company-page).
 
 ```
@@ -46,24 +46,22 @@ rsds-infra-helm
 - The Docker image available on Docker Hub
   (`renf7/rsds-infra-company-page`).
 
-## Install
+## Install or upgrade production
 
-```bash
-helm install company-page ./charts/company-page \
-  --set image.tag=latest \
-  --set ingress.certificateArn=ACM_CERTIFICATE_ARN
+Complete the production Secret, external DynamoDB, IAM/service-account and OAuth callback prerequisites in [docs/PRODUCTION.md](docs/PRODUCTION.md) first. The production profile installs exactly the frontend and auth service, with no local test infrastructure.
+
+From a clean current main checkout (PowerShell 7, Git, Helm and Docker CLI/Buildx):
+
+```powershell
+git switch main
+git pull --ff-only origin main
+./scripts/Prepare-Production.ps1
+helm upgrade --install company-page ./charts/company-page --kube-context YOUR_EKS_CONTEXT --namespace YOUR_NAMESPACE --create-namespace -f charts/company-page/values-production.yaml -f production-config.yaml -f production-images.json --atomic --wait --timeout 10m
 ```
 
-## Upgrade
+Preparation resolves both current service main commits, requires successful main CI/publishing, verifies their registry images and pins immutable digests. It does not deploy. Review the rendered release before installation as shown in the runbook. Rerun preparation before every upgrade; never fall back to latest or reuse a local fixture release's values. `production-config.yaml` contains your infrastructure settings and Secret names, not secret values.
 
-Deploy a specific commit's image by using its `git-<sha>` tag:
-
-```bash
-helm upgrade company-page ./charts/company-page \
-  --set image.tag=git-COMMIT_SHA \
-  --set ingress.certificateArn=ACM_CERTIFICATE_ARN
-```
-
+Bare chart defaults are retained for frontend-only compatibility/local tests and are not the production installation procedure.
 ## Check resources
 
 ```bash
@@ -117,3 +115,7 @@ behind:
 - EC2 → Load Balancers
 - EC2 → Target Groups
 - EC2 → Security Groups
+
+## Production: frontend plus authentication from main
+
+For EKS use [the production release runbook](docs/PRODUCTION.md), `values-production.yaml` and `scripts/Prepare-Production.ps1`. The preparation command resolves both current service main commits and successful image publications into digest-pinned `production-images.json`. It does not deploy. The production profile enables both services and forbids rsds-infra-local/test fixtures; older bare install examples below are frontend-only compatibility examples and are not the production procedure. Production OAuth uses https://www.rsdsoftware.eu; manual local SSO remains fixed at https://localhost:18443.

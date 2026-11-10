@@ -1,0 +1,28 @@
+# Apply with generated production-images.json and a private production config.
+production:
+  enabled: true
+  host: www.rsdsoftware.eu
+image:
+  tag: ''
+  digest: ''
+  pullPolicy: IfNotPresent
+auth:
+  enabled: true
+  local: false
+  providerMode: live
+  publicBaseUrl: https://www.rsdsoftware.eu
+  image:
+    tag: ''
+    digest: ''
+    pullPolicy: IfNotPresent
+  # Existing names in the target namespace; no secrets are stored in this chart.
+  signingSecretName: rsds-infra-auth-signing
+  trustSecretName: rsds-infra-auth-trust
+  providerSecretName: rsds-infra-auth-providers
+  serviceAccountName: rsds-infra-auth
+dynamodb:
+  enabled: false
+idp:
+  enabled: false
+mailpit:
+  enabled: false

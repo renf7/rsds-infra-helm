@@ -20,13 +20,20 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: auth
-          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag }}"
+          image: {{ include "company-page.image" .Values.auth.image | quote }}
           imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports: [{ name: http, containerPort: 8080 }]
           env:
             {{- if .Values.auth.providerMode }}
             - { name: RSDS_AUTH_PROVIDER_MODE, value: {{ .Values.auth.providerMode | quote }} }
+            {{- end }}
+            {{- if not .Values.auth.local }}
+            - { name: SPRING_PROFILES_ACTIVE, value: production }
+            - { name: RSDS_AUTH_LOCAL, value: "false" }
+            - { name: RSDS_AUTH_PUBLIC_BASE_URL, value: {{ .Values.auth.publicBaseUrl | quote }} }
+            - { name: RSDS_AUTH_DYNAMO_ENDPOINT, value: "" }
+            - { name: RSDS_AUTH_IDP_BASE, value: "" }
             {{- end }}
             - { name: RSDS_AUTH_REGION, value: {{ .Values.auth.region | quote }} }
             - { name: RSDS_AUTH_TABLE, value: {{ .Values.auth.table | quote }} }
