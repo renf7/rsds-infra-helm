@@ -63,6 +63,8 @@ auth:
   local: false
   # Empty uses fixture with local infrastructure, live otherwise. Manual override: live.
   providerMode: ''
+  # Runtime presentation policy; edit the projected ConfigMap without a restart.
+  visibleProviders: [facebook, microsoft, google, github]
   image:
     repository: renf7/rsds-infra-auth-service
     digest: ''
