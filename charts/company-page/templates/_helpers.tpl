@@ -47,3 +47,12 @@ Selector labels.
 app.kubernetes.io/name: {{ include "company-page.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/* Immutable production references; local/test tag overrides remain supported. */}}
+{{- define "company-page.image" -}}
+{{- if .digest -}}
+{{- printf "%s@%s" .repository .digest -}}
+{{- else -}}
+{{- printf "%s:%s" .repository .tag -}}
+{{- end -}}
+{{- end -}}

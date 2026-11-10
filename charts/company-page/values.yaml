@@ -1,8 +1,13 @@
+production:
+  enabled: false
+  host: www.rsdsoftware.eu
+
 # Number of pod replicas.
 replicaCount: 1
 
 image:
   repository: renf7/rsds-infra-company-page
+  digest: ''
   tag: latest
   pullPolicy: Always
 
@@ -54,11 +59,13 @@ affinity: {}
 # Authentication is optional until all production registrations/secrets are configured.
 auth:
   enabled: false
+  publicBaseUrl: https://www.rsdsoftware.eu
   local: false
   # Empty uses fixture with local infrastructure, live otherwise. Manual override: live.
   providerMode: ''
   image:
     repository: renf7/rsds-infra-auth-service
+    digest: ''
     tag: latest
     pullPolicy: IfNotPresent
   signingSecretName: ''

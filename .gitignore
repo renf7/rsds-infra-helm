@@ -22,3 +22,7 @@ Thumbs.db
 *.swo
 *~
 .aider*
+
+production-images.json
+production-config.yaml
+.local-production/

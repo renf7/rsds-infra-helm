@@ -58,6 +58,8 @@ jobs:
           helm lint charts/company-page
           helm template smoke charts/company-page > /tmp/rendered.yaml
           python -m pip install 'PyYAML==6.0.3'
+          python tests/production-chart.py
+          pwsh -NoProfile -File tests/production-release.ps1
           python - <<'PY'
           import pathlib, yaml
           docs = list(yaml.safe_load_all(pathlib.Path('/tmp/rendered.yaml').read_text()))
