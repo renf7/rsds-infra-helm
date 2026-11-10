@@ -95,3 +95,26 @@ jobs:
             echo 'Root filesystem unexpectedly writable'
             exit 1
           fi
+  medium-report:
+    name: Trivy MEDIUM findings report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          version: v0.76.1
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig
+          severity: MEDIUM
+          format: json
+          output: trivy-medium.json
+          exit-code: '0'
+          ignore-unfixed: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: trivy-medium-findings
+          retention-days: 7
+          path: trivy-medium.json

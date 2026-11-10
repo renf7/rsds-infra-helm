@@ -1,0 +1,8 @@
+/.github/CODEOWNERS @renf7
+/.github/workflows/ @renf7
+/charts/ @renf7
+/policy/ @renf7
+/tools/security/ @renf7
+/tests/ @renf7
+/sonar-project.properties @renf7
+/docs/security/ @renf7
