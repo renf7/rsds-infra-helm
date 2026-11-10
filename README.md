@@ -119,3 +119,5 @@ behind:
 ## Production: frontend plus authentication from main
 
 For EKS use [the production release runbook](docs/PRODUCTION.md), `values-production.yaml` and `scripts/Prepare-Production.ps1`. The preparation command resolves both current service main commits and successful image publications into digest-pinned `production-images.json`. It does not deploy. The production profile enables both services and forbids rsds-infra-local/test fixtures; older bare install examples below are frontend-only compatibility examples and are not the production procedure. Production OAuth uses https://www.rsdsoftware.eu; manual local SSO remains fixed at https://localhost:18443.
+
+Runtime Continue with visibility: [EKS operator runbook](docs/provider-visibility.md).

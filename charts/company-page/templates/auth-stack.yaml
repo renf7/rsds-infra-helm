@@ -25,6 +25,7 @@ spec:
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports: [{ name: http, containerPort: 8080 }]
           env:
+            - { name: RSDS_AUTH_PROVIDER_VISIBILITY_FILE, value: /run/provider-visibility/visible-providers }
             {{- if .Values.auth.providerMode }}
             - { name: RSDS_AUTH_PROVIDER_MODE, value: {{ .Values.auth.providerMode | quote }} }
             {{- end }}
@@ -57,6 +58,7 @@ spec:
             requests: { memory: 256Mi, cpu: 100m, ephemeral-storage: 128Mi }
             limits: { memory: 768Mi, cpu: "2", ephemeral-storage: 640Mi }
           volumeMounts:
+            - { name: provider-visibility, mountPath: /run/provider-visibility, readOnly: true }
             - { name: tmp, mountPath: /tmp }
             - { name: signing, mountPath: /run/signing, readOnly: true }
             - { name: trust, mountPath: /run/trust, readOnly: true }
@@ -64,6 +66,10 @@ spec:
             - { name: apple, mountPath: /run/apple, readOnly: true }
             {{- end }}
       volumes:
+        - name: provider-visibility
+          configMap:
+            name: {{ include "company-page.fullname" . }}-provider-visibility
+            defaultMode: 0444
         {{- if .Values.auth.appleKeySecretName }}
         - name: apple
           secret:

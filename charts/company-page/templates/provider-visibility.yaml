@@ -1,0 +1,13 @@
+{{- if .Values.auth.enabled }}
+{{- range .Values.auth.visibleProviders }}
+{{- if not (has . (list "facebook" "microsoft" "google" "github")) }}
+{{- fail "auth.visibleProviders accepts only facebook, microsoft, google, github (Apple is deferred)" }}
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "company-page.fullname" . }}-provider-visibility
+data:
+  visible-providers: {{ join "," .Values.auth.visibleProviders | quote }}
+{{- end }}
