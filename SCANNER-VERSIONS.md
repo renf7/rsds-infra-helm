@@ -42,3 +42,13 @@ Combined Dependabot PRs #5 (setup-python 7.1.0), #6 (setup-helm action 5.0.1) an
 
 Tracking: https://rsdsoftware.atlassian.net/browse/RSDSINFRA-27. Validate both consolidated PR heads with the local runner and explicit --e2e; browser tests stay disabled by default. PR workflows remain non-deploying.
 
+
+## RSDSINFRA-37 — 10 November 2026
+
+Official stable releases verified: kubeconform0.8.0, Conftest0.71.1,
+actionlint1.7.12 and zizmor1.32.0. Installer pins upstream archive SHA256 values.
+Helm3.22.1 is retained for Helm3 production compatibility, not latest-major claims.
+Schema target matrix is Kubernetes1.34.0/1.35.0; no missing-schema bypass.
+CodeQL now covers Python and Actions; no template/PowerShell analysis is claimed.
+Sonar visibility changes removed; owner token rotation remains required, and paid
+Team/Enterprise SOTs are not a prerequisite. Existing scanner gates remain intact.

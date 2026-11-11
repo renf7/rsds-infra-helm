@@ -1,0 +1,32 @@
+name: Chart schema and policy
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: chart-policy-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    name: Kubernetes schemas and Helm security policies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install pinned schema/policy tools
+        run: |
+          bash tools/security/install-tools.sh
+          python -m pip install PyYAML==6.0.3
+      - name: Validate rendered schemas, project policy and negative cases
+        run: bash tools/security/check-chart.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: rendered-policy-fixtures
+          retention-days: 7
+          path: .validation/rendered/
