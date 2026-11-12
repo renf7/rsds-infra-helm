@@ -31,6 +31,8 @@ spec:
             {{- end }}
             {{- if not .Values.auth.local }}
             - { name: SPRING_PROFILES_ACTIVE, value: production }
+            # Login no longer sends verification mail; SMTP is not a readiness dependency.
+            - { name: MANAGEMENT_HEALTH_MAIL_ENABLED, value: "false" }
             - { name: RSDS_AUTH_LOCAL, value: "false" }
             - { name: RSDS_AUTH_PUBLIC_BASE_URL, value: {{ .Values.auth.publicBaseUrl | quote }} }
             - { name: RSDS_AUTH_DYNAMO_ENDPOINT, value: "" }
@@ -53,6 +55,7 @@ spec:
           envFrom: [{ secretRef: { name: {{ .Values.auth.providerSecretName }} } }]
           {{- end }}
           readinessProbe: { httpGet: { path: /actuator/health, port: http }, initialDelaySeconds: 5, periodSeconds: 5 }
+          startupProbe: { httpGet: { path: /actuator/health, port: http }, periodSeconds: 5, failureThreshold: 36 }
           livenessProbe: { httpGet: { path: /actuator/health, port: http }, initialDelaySeconds: 30, periodSeconds: 10 }
           resources:
             requests: { memory: 256Mi, cpu: 100m, ephemeral-storage: 128Mi }
