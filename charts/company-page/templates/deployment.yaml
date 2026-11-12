@@ -53,12 +53,18 @@ spec:
             httpGet:
               path: /
               port: http
+              {{- if .Values.production.enabled }}
+              httpHeaders: [{ name: Host, value: {{ .Values.production.host | quote }} }]
+              {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: http
+              {{- if .Values.production.enabled }}
+              httpHeaders: [{ name: Host, value: {{ .Values.production.host | quote }} }]
+              {{- end }}
             initialDelaySeconds: 10
             periodSeconds: 20
           resources:

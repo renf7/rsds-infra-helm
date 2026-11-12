@@ -31,6 +31,12 @@ assert env['RSDS_AUTH_LOCAL'] == 'false'
 assert env['RSDS_AUTH_PUBLIC_BASE_URL'] == 'https://www.rsdsoftware.eu'
 assert env['RSDS_AUTH_DYNAMO_ENDPOINT'] == ''
 assert env['SPRING_PROFILES_ACTIVE'] == 'production'
+assert env['MANAGEMENT_HEALTH_MAIL_ENABLED'] == 'false'
+assert pod['containers'][0]['startupProbe']['failureThreshold'] == 36
+frontend = next(d for d in deployments if not d['metadata']['name'].endswith('-auth'))
+for probe in ['readinessProbe', 'livenessProbe']:
+    assert frontend['spec']['template']['spec']['containers'][0][probe]['httpGet']['httpHeaders'] == [
+        {'name': 'Host', 'value': 'www.rsdsoftware.eu'}]
 config = next(d for d in docs if d['kind'] == 'ConfigMap')['data']['nginx.conf']
 assert 'location /__test/' not in config
 assert 'proxy_set_header X-Forwarded-Proto https;' in config

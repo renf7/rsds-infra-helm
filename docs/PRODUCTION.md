@@ -31,9 +31,9 @@ or old generated release files as a substitute for current main.
   Register **production** callbacks:
   `https://www.rsdsoftware.eu/api/auth/login/oauth2/code/{provider}`.
   Existing `https://localhost:18443` registrations remain for local testing only.
-  GitHub/Google/Microsoft/Facebook/Apple need their appropriate production app
-  registrations, consent/publication and permitted-account settings. Apple also
-  needs its private key secret and team/key IDs when enabled. Unconfigured
+  GitHub/Google/Microsoft/Facebook need their appropriate production app
+  registrations, consent/publication and permitted-account settings. Apple is
+  deliberately deferred (RSDSINFRA-32), not a release prerequisite. Unconfigured
   providers remain disabled; the chart cannot create external OAuth registrations.
 - Both public Docker Hub repositories with main-built images. The auth publisher
   needs repository Actions secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`,
@@ -87,6 +87,7 @@ Use your existing release name/namespace and explicitly selected EKS context:
 helm lint charts/company-page -f charts/company-page/values-production.yaml -f production-config.yaml -f production-images.json
 helm template company-page charts/company-page -f charts/company-page/values-production.yaml -f production-config.yaml -f production-images.json > production-rendered.yaml
 # Review the two Deployments, their digests, Secret references and Ingress first.
+./scripts/Test-Production.ps1 -KubeContext YOUR_EKS_CONTEXT -Namespace YOUR_NAMESPACE -Config production-config.yaml
 helm upgrade --install company-page charts/company-page --kube-context YOUR_EKS_CONTEXT --namespace YOUR_NAMESPACE --create-namespace -f charts/company-page/values-production.yaml -f production-config.yaml -f production-images.json --atomic --wait --timeout 10m
 ```
 
@@ -100,3 +101,125 @@ real sign-in/JWT/session/Settings/logout and certificate/database access work on
 the public canonical host. Passing local fixture tests is not EKS/live-provider
 acceptance. Keep the image file/chart commit as release evidence. Roll back using
 the previous Helm revision and its recorded image digests; do not switch to latest.
+
+## Non-deploying preflight and capacity
+
+`Test-Production.ps1` requires PowerShell 7, Helm 3 and kubectl. It always selects
+the supplied context/namespace, lints/renders the production values, verifies
+referenced Secrets/service accounts and signing/trust key names, and performs
+strict **server dry runs** for every rendered resource. Existing resources use
+replacement validation (with resourceVersion and allocated Service addresses),
+avoiding the misleading duplicate `http` port produced by client-side apply when
+moving an old port-80 Deployment to port 8080. The script never installs, upgrades,
+restarts or deletes cluster objects. Temporary manifests contain Secret references,
+not Secret values. The existing namespace must exist. Read and dry-run create/update
+permissions are required; admission webhooks must support dry runs.
+
+This is not a complete Helm upgrade simulation: immutable selectors/ownership,
+concurrent changes, AWS access, scheduling, credential correctness and real login
+still require operator verification. Do not feed its replacement manifests into
+`kubectl replace` without dry-run; Helm remains the release owner.
+
+Before upgrading, inspect capacity (including DaemonSets on each extra node):
+
+```bash
+kubectl --context rsd-software-eks get nodes -o custom-columns='NAME:.metadata.name,PODS:.status.allocatable.pods'
+kubectl --context rsd-software-eks get pods -A -o wide
+kubectl --context rsd-software-eks describe nodes
+```
+
+Allow room for both applications **and rolling-update surge pods**, CPU/memory
+requests, topology and the CNI's pod/IP limits. A Ready node does not prove spare
+capacity. Provision additional capacity only after checking AWS cost. Auth stays
+one replica until shared OAuth session storage exists. Its startup probe allows
+up to three minutes before liveness starts; production explicitly disables unused
+SMTP health. Frontend probes send the canonical Host to avoid redirects.
+
+## Diagnose an unsuccessful upgrade
+
+While the upgrade is waiting, use a second terminal:
+
+```bash
+helm history company-page --kube-context rsd-software-eks -n rsds --max 6
+kubectl --context rsd-software-eks -n rsds get deployments,pods -o wide
+kubectl --context rsd-software-eks -n rsds get events --sort-by=.metadata.creationTimestamp
+kubectl --context rsd-software-eks -n rsds logs deployment/company-page-auth -c auth --tail=100
+kubectl --context rsd-software-eks -n rsds logs deployment/company-page-auth -c auth --previous --tail=100
+```
+
+Treat logs as private; redact cookies, authorization codes, identifiers and tokens
+before sharing. Pending pods: inspect scheduling events/capacity. CrashLoopBackOff:
+inspect previous logs, Secret mounts, signing certificates and DynamoDB workload
+identity. Unauthorized may require renewing the operator's EKS credentials.
+With Helm 3 `--atomic`, a timeout/failure rolls back: `deployed` may describe the
+**old chart**, and auth can disappear entirely. Check revision/chart/images, not
+just status. Do not run simultaneous upgrades, delete the working release or turn
+off checks to obtain a green status. Capture diagnostics before rollback removes
+the failed pods, fix the cause, refresh main image pins and retry the same upgrade.
+
+## Shared DynamoDB backup and recovery
+
+Keep PITR and deletion protection enabled on the single production table. Verify
+with `aws dynamodb describe-continuous-backups --region eu-central-1 --table-name
+rsds-infra` and `aws dynamodb describe-table`. Before a risky migration, record a
+completed on-demand backup ARN (`create-backup`, then `describe-backup`). Backups
+and restored tables have AWS costs; retention/deletion requires owner approval.
+
+Recovery is an operator change, never a chart startup action:
+
+1. Stop application writes in an agreed maintenance window and record the current
+   chart/images/table configuration. Back up the current table before recovery.
+2. Use DynamoDB `restore-table-to-point-in-time` or `restore-table-from-backup`
+   to a **new isolated recovery table**. AWS cannot restore in place. Restrict
+   recovery access; it contains personal data and authentication records.
+3. Wait for ACTIVE, verify keys/record integrity and adapter reads in isolation.
+   Reapply/verify PITR, deletion protection, TTL settings and least-privilege IAM;
+   restored settings and permissions must not be assumed to match the original.
+4. A restore can resurrect revoked sessions. Invalidate restored refresh sessions
+   using the auth runbook before accepting traffic; plan forced reauthentication
+   and signing-key rotation if revocation integrity cannot be established.
+5. Point the deployment's `auth.table` and workload IAM at the validated recovery
+   table and perform a reviewed upgrade. All active services still share exactly
+   one table; the recovery copy is temporary, not another application database.
+6. Verify login/logout and persistence, then resume traffic. Keep the original
+   table for the agreed rollback window; never automatically delete either copy.
+
+## Signing certificate rotation
+
+Only auth receives `private.pem`. Verify the new public certificate matches its
+RSA private key and has a valid validity window before creating versioned Secrets.
+Do not print/export private keys into Git, manifests, logs or Jira.
+
+1. Distribute a trust bundle containing old **and new** public `.crt` certificates
+   to auth and each future resource service. Restart consumers if their verifier
+   loads certificates only at startup. Verify the old signer still works.
+2. Change auth's signing Secret to the new private key and restart auth using a
+   reviewed values change. Verify new JWT signature/issuer/audience, refresh and
+   logout; retain old public trust for the longest still-valid token lifetime
+   plus clock skew. Use configured lifetimes, not a guessed fixed interval.
+3. Remove old trust only after that interval and successful verification. For an
+   exposed private key, use the incident/revocation procedure instead of normal
+   overlap: reject affected tokens and force reauthentication.
+
+Rollback must preserve trust for tokens already issued with the new signer.
+Changing a Kubernetes Secret alone does not prove the running process reloaded
+it. Rehearse rotation and recovery in isolated staging before production.
+
+## RSDSINFRA-24 release acceptance ledger
+
+Current deployable scope is frontend + auth, one external DynamoDB table, no local
+runner/fixtures. Keep exact chart commit, service commits/digests, main CI run
+links, preflight output, Helm revision and operator sign-off in the release record.
+
+| Acceptance | Required evidence / remaining dependency |
+| --- | --- |
+| Static EN/PL pages, responsive layout, privacy page | Browser regressions plus operator desktop/tablet/mobile check |
+| Auth/JWT/session/Settings/logout | Fixture E2E against real app/database plus separate live-provider sign-in |
+| Provider availability | GitHub, Google and Microsoft actual production tests; Facebook requires Meta eligibility/review; Apple deferred by RSDSINFRA-32 |
+| Release and recovery | Exact main images, strict preflight, observed rollout, staging backup/restore and certificate rotation rehearsal |
+| Day/night parity | RSDSINFRA-14 remains To Do |
+| All service roles, 401/403 and cross-user isolation | RSDSINFRA-18 remains To Do |
+| Reviewed offers, auto-send idempotency, competence flow | RSDSINFRA-20 / RSDSINFRA-22 and dependent backend tasks remain To Do |
+
+The umbrella ticket cannot be closed from this chart change alone. Neither a
+fixture suite nor a successful preflight proves production SSO, restore or rotation.
