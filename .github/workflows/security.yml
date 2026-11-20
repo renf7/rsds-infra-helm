@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: Azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310
+      - uses: Azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e
         with:
           version: v3.17.3
       - name: Render chart
